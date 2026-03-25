@@ -1,0 +1,126 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <map>
+using namespace std;
+
+struct Ball {
+    string over;
+    string event;
+    int runs;
+    string batsman;
+};
+
+struct Highlight {
+    string over;
+    string event;
+    int score;
+};
+
+pair<int,int> getOverDetails(string s) {
+    int over = 0, ball = 0;
+    int i = 0;
+
+    while (s[i] != '.') {
+        over = over * 10 + (s[i] - '0');
+        i++;
+    }
+    i++;
+
+    while (i < s.size()) {
+        ball = ball * 10 + (s[i] - '0');
+        i++;
+    }
+
+    return {over, ball};
+}
+
+int calculateScore(string event, string over) {
+
+    int score = 1;
+
+    if (event == "WICKET") score = 10;
+    else if (event == "SIX") score = 7;
+    else if (event == "FOUR") score = 6;
+    else if (event == "HALF") score = 8;
+    else if (event == "CENTURY") score = 9;
+
+    int overNum = stoi(over.substr(0, over.find('.')));
+
+    if (overNum >= 16)
+        score += 3;
+    else if (overNum >= 10)
+        score += 1;
+
+    return score;
+}
+
+int main() {
+
+    vector<Ball> match = {
+        {"1.1","1 RUN",1,"A"},
+        {"1.2","FOUR",4,"A"},
+        {"1.3","SIX",6,"A"},
+        {"2.1","SIX",6,"B"},
+        {"2.2","FOUR",4,"B"},
+        {"3.1","WICKET",0,"C"},
+        {"7.1","WICKET",0,"D"},
+        {"10.1","1 RUN",1,"A"},
+        {"12.1","FOUR",4,"A"},
+        {"15.1","WICKET",0,"E"},
+        {"16.1","SIX",6,"B"},
+        {"18.1","SIX",6,"A"},
+        {"19.1","FOUR",4,"A"},
+        {"20.1","SIX",6,"B"}
+    };
+
+    vector<Highlight> highlights;
+
+    map<string,int> runs;
+
+    for (auto b : match) {
+
+        runs[b.batsman] += b.runs;
+
+        if (runs[b.batsman] == 50) {
+            highlights.push_back({b.over, b.batsman + " HALF", calculateScore("HALF", b.over)});
+        }
+
+        if (runs[b.batsman] == 100) {
+            highlights.push_back({b.over, b.batsman + " CENTURY", calculateScore("CENTURY", b.over)});
+        } 
+
+        if (b.event == "SIX" || b.event == "FOUR" || b.event == "WICKET") {
+            highlights.push_back({b.over, b.event, calculateScore(b.event, b.over)});
+        }
+    }
+
+    sort(highlights.begin(), highlights.end(), [](Highlight a, Highlight b) {
+        return a.score > b.score;
+    });
+
+    vector<Highlight> finalList;
+    int limit = 10;
+
+    for (int i = 0; i < highlights.size() && finalList.size() < limit; i++) {
+        finalList.push_back(highlights[i]);
+    }
+
+    sort(finalList.begin(), finalList.end(), [](Highlight a, Highlight b) {
+        auto p1 = getOverDetails(a.over);
+        auto p2 = getOverDetails(b.over);
+
+        if (p1.first == p2.first)
+            return p1.second < p2.second;
+
+        return p1.first < p2.first;
+    });
+
+    cout << "Match Highlights:\n\n";
+
+    for (auto h : finalList) {
+        cout << h.over << " - " << h.event << endl;
+    }
+
+    return 0;
+}
